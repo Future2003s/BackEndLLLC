@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
-import { connectDatabase } from '../config/database';
-import { Translation, TranslationCategories } from '../models/Translation';
-import { User } from '../models/User';
-import { logger } from '../utils/logger';
+import mongoose from "mongoose";
+import { connectDatabase } from "../config/database";
+import { Translation, TranslationCategories } from "../models/Translation";
+import { User } from "../models/User";
+import { logger } from "../utils/logger";
 
 /**
  * Default translations for the application
@@ -10,274 +10,274 @@ import { logger } from '../utils/logger';
 const defaultTranslations = [
     // UI Translations
     {
-        key: 'ui.welcome',
+        key: "ui.welcome",
         category: TranslationCategories.UI,
         translations: {
-            vi: 'Chào mừng',
-            en: 'Welcome',
-            ja: 'ようこそ'
+            vi: "Chào mừng",
+            en: "Welcome",
+            ja: "ようこそ"
         },
-        description: 'Welcome message'
+        description: "Welcome message"
     },
     {
-        key: 'ui.login',
+        key: "ui.login",
         category: TranslationCategories.UI,
         translations: {
-            vi: 'Đăng nhập',
-            en: 'Login',
-            ja: 'ログイン'
+            vi: "Đăng nhập",
+            en: "Login",
+            ja: "ログイン"
         },
-        description: 'Login button text'
+        description: "Login button text"
     },
     {
-        key: 'ui.register',
+        key: "ui.register",
         category: TranslationCategories.UI,
         translations: {
-            vi: 'Đăng ký',
-            en: 'Register',
-            ja: '登録'
+            vi: "Đăng ký",
+            en: "Register",
+            ja: "登録"
         },
-        description: 'Register button text'
+        description: "Register button text"
     },
     {
-        key: 'ui.logout',
+        key: "ui.logout",
         category: TranslationCategories.UI,
         translations: {
-            vi: 'Đăng xuất',
-            en: 'Logout',
-            ja: 'ログアウト'
+            vi: "Đăng xuất",
+            en: "Logout",
+            ja: "ログアウト"
         },
-        description: 'Logout button text'
+        description: "Logout button text"
     },
     {
-        key: 'ui.search',
+        key: "ui.search",
         category: TranslationCategories.UI,
         translations: {
-            vi: 'Tìm kiếm',
-            en: 'Search',
-            ja: '検索'
+            vi: "Tìm kiếm",
+            en: "Search",
+            ja: "検索"
         },
-        description: 'Search placeholder text'
+        description: "Search placeholder text"
     },
     {
-        key: 'ui.add_to_cart',
+        key: "ui.add_to_cart",
         category: TranslationCategories.UI,
         translations: {
-            vi: 'Thêm vào giỏ hàng',
-            en: 'Add to Cart',
-            ja: 'カートに追加'
+            vi: "Thêm vào giỏ hàng",
+            en: "Add to Cart",
+            ja: "カートに追加"
         },
-        description: 'Add to cart button'
+        description: "Add to cart button"
     },
     {
-        key: 'ui.checkout',
+        key: "ui.checkout",
         category: TranslationCategories.UI,
         translations: {
-            vi: 'Thanh toán',
-            en: 'Checkout',
-            ja: 'チェックアウト'
+            vi: "Thanh toán",
+            en: "Checkout",
+            ja: "チェックアウト"
         },
-        description: 'Checkout button'
+        description: "Checkout button"
     },
 
     // Error Messages
     {
-        key: 'error.invalid_credentials',
+        key: "error.invalid_credentials",
         category: TranslationCategories.ERROR,
         translations: {
-            vi: 'Thông tin đăng nhập không hợp lệ',
-            en: 'Invalid credentials',
-            ja: '無効な認証情報'
+            vi: "Thông tin đăng nhập không hợp lệ",
+            en: "Invalid credentials",
+            ja: "無効な認証情報"
         },
-        description: 'Invalid login credentials error'
+        description: "Invalid login credentials error"
     },
     {
-        key: 'error.user_not_found',
+        key: "error.user_not_found",
         category: TranslationCategories.ERROR,
         translations: {
-            vi: 'Không tìm thấy người dùng',
-            en: 'User not found',
-            ja: 'ユーザーが見つかりません'
+            vi: "Không tìm thấy người dùng",
+            en: "User not found",
+            ja: "ユーザーが見つかりません"
         },
-        description: 'User not found error'
+        description: "User not found error"
     },
     {
-        key: 'error.product_not_found',
+        key: "error.product_not_found",
         category: TranslationCategories.ERROR,
         translations: {
-            vi: 'Không tìm thấy sản phẩm',
-            en: 'Product not found',
-            ja: '商品が見つかりません'
+            vi: "Không tìm thấy sản phẩm",
+            en: "Product not found",
+            ja: "商品が見つかりません"
         },
-        description: 'Product not found error'
+        description: "Product not found error"
     },
     {
-        key: 'error.insufficient_stock',
+        key: "error.insufficient_stock",
         category: TranslationCategories.ERROR,
         translations: {
-            vi: 'Không đủ hàng trong kho',
-            en: 'Insufficient stock',
-            ja: '在庫不足'
+            vi: "Không đủ hàng trong kho",
+            en: "Insufficient stock",
+            ja: "在庫不足"
         },
-        description: 'Insufficient stock error'
+        description: "Insufficient stock error"
     },
 
     // Success Messages
     {
-        key: 'success.login',
+        key: "success.login",
         category: TranslationCategories.SUCCESS,
         translations: {
-            vi: 'Đăng nhập thành công',
-            en: 'Login successful',
-            ja: 'ログイン成功'
+            vi: "Đăng nhập thành công",
+            en: "Login successful",
+            ja: "ログイン成功"
         },
-        description: 'Successful login message'
+        description: "Successful login message"
     },
     {
-        key: 'success.register',
+        key: "success.register",
         category: TranslationCategories.SUCCESS,
         translations: {
-            vi: 'Đăng ký thành công',
-            en: 'Registration successful',
-            ja: '登録成功'
+            vi: "Đăng ký thành công",
+            en: "Registration successful",
+            ja: "登録成功"
         },
-        description: 'Successful registration message'
+        description: "Successful registration message"
     },
     {
-        key: 'success.product_added',
+        key: "success.product_added",
         category: TranslationCategories.SUCCESS,
         translations: {
-            vi: 'Đã thêm sản phẩm vào giỏ hàng',
-            en: 'Product added to cart',
-            ja: '商品をカートに追加しました'
+            vi: "Đã thêm sản phẩm vào giỏ hàng",
+            en: "Product added to cart",
+            ja: "商品をカートに追加しました"
         },
-        description: 'Product added to cart success message'
+        description: "Product added to cart success message"
     },
     {
-        key: 'success.order_placed',
+        key: "success.order_placed",
         category: TranslationCategories.SUCCESS,
         translations: {
-            vi: 'Đặt hàng thành công',
-            en: 'Order placed successfully',
-            ja: '注文が正常に完了しました'
+            vi: "Đặt hàng thành công",
+            en: "Order placed successfully",
+            ja: "注文が正常に完了しました"
         },
-        description: 'Order placed success message'
+        description: "Order placed success message"
     },
 
     // Validation Messages
     {
-        key: 'validation.required',
+        key: "validation.required",
         category: TranslationCategories.VALIDATION,
         translations: {
-            vi: 'Trường này là bắt buộc',
-            en: 'This field is required',
-            ja: 'この項目は必須です'
+            vi: "Trường này là bắt buộc",
+            en: "This field is required",
+            ja: "この項目は必須です"
         },
-        description: 'Required field validation message'
+        description: "Required field validation message"
     },
     {
-        key: 'validation.email_invalid',
+        key: "validation.email_invalid",
         category: TranslationCategories.VALIDATION,
         translations: {
-            vi: 'Email không hợp lệ',
-            en: 'Invalid email address',
-            ja: '無効なメールアドレス'
+            vi: "Email không hợp lệ",
+            en: "Invalid email address",
+            ja: "無効なメールアドレス"
         },
-        description: 'Invalid email validation message'
+        description: "Invalid email validation message"
     },
     {
-        key: 'validation.password_min_length',
+        key: "validation.password_min_length",
         category: TranslationCategories.VALIDATION,
         translations: {
-            vi: 'Mật khẩu phải có ít nhất 6 ký tự',
-            en: 'Password must be at least 6 characters',
-            ja: 'パスワードは6文字以上である必要があります'
+            vi: "Mật khẩu phải có ít nhất 6 ký tự",
+            en: "Password must be at least 6 characters",
+            ja: "パスワードは6文字以上である必要があります"
         },
-        description: 'Password minimum length validation'
+        description: "Password minimum length validation"
     },
 
     // Product Related
     {
-        key: 'product.price',
+        key: "product.price",
         category: TranslationCategories.PRODUCT,
         translations: {
-            vi: 'Giá',
-            en: 'Price',
-            ja: '価格'
+            vi: "Giá",
+            en: "Price",
+            ja: "価格"
         },
-        description: 'Product price label'
+        description: "Product price label"
     },
     {
-        key: 'product.description',
+        key: "product.description",
         category: TranslationCategories.PRODUCT,
         translations: {
-            vi: 'Mô tả',
-            en: 'Description',
-            ja: '説明'
+            vi: "Mô tả",
+            en: "Description",
+            ja: "説明"
         },
-        description: 'Product description label'
+        description: "Product description label"
     },
     {
-        key: 'product.category',
+        key: "product.category",
         category: TranslationCategories.PRODUCT,
         translations: {
-            vi: 'Danh mục',
-            en: 'Category',
-            ja: 'カテゴリー'
+            vi: "Danh mục",
+            en: "Category",
+            ja: "カテゴリー"
         },
-        description: 'Product category label'
+        description: "Product category label"
     },
     {
-        key: 'product.brand',
+        key: "product.brand",
         category: TranslationCategories.PRODUCT,
         translations: {
-            vi: 'Thương hiệu',
-            en: 'Brand',
-            ja: 'ブランド'
+            vi: "Thương hiệu",
+            en: "Brand",
+            ja: "ブランド"
         },
-        description: 'Product brand label'
+        description: "Product brand label"
     },
     {
-        key: 'product.in_stock',
+        key: "product.in_stock",
         category: TranslationCategories.PRODUCT,
         translations: {
-            vi: 'Còn hàng',
-            en: 'In Stock',
-            ja: '在庫あり'
+            vi: "Còn hàng",
+            en: "In Stock",
+            ja: "在庫あり"
         },
-        description: 'Product in stock status'
+        description: "Product in stock status"
     },
     {
-        key: 'product.out_of_stock',
+        key: "product.out_of_stock",
         category: TranslationCategories.PRODUCT,
         translations: {
-            vi: 'Hết hàng',
-            en: 'Out of Stock',
-            ja: '在庫切れ'
+            vi: "Hết hàng",
+            en: "Out of Stock",
+            ja: "在庫切れ"
         },
-        description: 'Product out of stock status'
+        description: "Product out of stock status"
     },
 
     // Email Templates
     {
-        key: 'email.welcome_subject',
+        key: "email.welcome_subject",
         category: TranslationCategories.EMAIL,
         translations: {
-            vi: 'Chào mừng bạn đến với ShopDev',
-            en: 'Welcome to ShopDev',
-            ja: 'ShopDevへようこそ'
+            vi: "Chào mừng bạn đến với ShopDev",
+            en: "Welcome to ShopDev",
+            ja: "ShopDevへようこそ"
         },
-        description: 'Welcome email subject'
+        description: "Welcome email subject"
     },
     {
-        key: 'email.order_confirmation_subject',
+        key: "email.order_confirmation_subject",
         category: TranslationCategories.EMAIL,
         translations: {
-            vi: 'Xác nhận đơn hàng',
-            en: 'Order Confirmation',
-            ja: '注文確認'
+            vi: "Xác nhận đơn hàng",
+            en: "Order Confirmation",
+            ja: "注文確認"
         },
-        description: 'Order confirmation email subject'
+        description: "Order confirmation email subject"
     }
 ];
 
@@ -286,15 +286,15 @@ const defaultTranslations = [
  */
 async function seedTranslations() {
     try {
-        logger.info('🌱 Starting translation seeding...');
+        logger.info("🌱 Starting translation seeding...");
 
         // Connect to database
         await connectDatabase();
 
         // Find admin user to use as creator
-        const adminUser = await User.findOne({ role: 'admin' });
+        const adminUser = await User.findOne({ role: "admin" });
         if (!adminUser) {
-            throw new Error('Admin user not found. Please create an admin user first.');
+            throw new Error("Admin user not found. Please create an admin user first.");
         }
 
         let created = 0;
@@ -307,8 +307,8 @@ async function seedTranslations() {
             if (existingTranslation) {
                 // Update existing translation if needed
                 let needsUpdate = false;
-                
-                for (const lang of ['vi', 'en', 'ja'] as const) {
+
+                for (const lang of ["vi", "en", "ja"] as const) {
                     if (existingTranslation.translations[lang] !== translationData.translations[lang]) {
                         existingTranslation.translations[lang] = translationData.translations[lang];
                         needsUpdate = true;
@@ -321,7 +321,7 @@ async function seedTranslations() {
                 }
 
                 if (needsUpdate) {
-                    existingTranslation.updatedBy = adminUser._id;
+                    existingTranslation.updatedBy = adminUser._id as any;
                     await existingTranslation.save();
                     updated++;
                     logger.info(`📝 Updated translation: ${translationData.key}`);
@@ -342,15 +342,14 @@ async function seedTranslations() {
             }
         }
 
-        logger.info('✅ Translation seeding completed!');
+        logger.info("✅ Translation seeding completed!");
         logger.info(`📊 Results: ${created} created, ${updated} updated, ${skipped} skipped`);
-
     } catch (error) {
-        logger.error('❌ Translation seeding failed:', error);
+        logger.error("❌ Translation seeding failed:", error);
         process.exit(1);
     } finally {
         await mongoose.disconnect();
-        logger.info('👋 Database disconnected');
+        logger.info("👋 Database disconnected");
         process.exit(0);
     }
 }

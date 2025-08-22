@@ -1,22 +1,22 @@
-import DataLoader from 'dataloader';
-import { Product } from '../models/Product';
-import { User } from '../models/User';
-import { Category } from '../models/Category';
-import { Brand } from '../models/Brand';
-import { logger } from '../utils/logger';
-import { advancedCacheService } from './advancedCacheService';
+import DataLoader from "dataloader";
+import { Product } from "../models/Product";
+import { User } from "../models/User";
+import { Category } from "../models/Category";
+import { Brand } from "../models/Brand";
+import { logger } from "../utils/logger";
+import { advancedCacheService } from "./advancedCacheService";
 
 /**
  * DataLoader Service for N+1 Query Optimization
  * Batches and caches database queries for optimal performance
  */
 class DataLoaderService {
-    private productLoader: DataLoader<string, any>;
-    private userLoader: DataLoader<string, any>;
-    private categoryLoader: DataLoader<string, any>;
-    private brandLoader: DataLoader<string, any>;
-    private productsByCategoryLoader: DataLoader<string, any[]>;
-    private productsByBrandLoader: DataLoader<string, any[]>;
+    private productLoader!: DataLoader<string, any>;
+    private userLoader!: DataLoader<string, any>;
+    private categoryLoader!: DataLoader<string, any>;
+    private brandLoader!: DataLoader<string, any>;
+    private productsByCategoryLoader!: DataLoader<string, any[]>;
+    private productsByBrandLoader!: DataLoader<string, any[]>;
 
     constructor() {
         this.initializeLoaders();
@@ -26,8 +26,8 @@ class DataLoaderService {
         // Product loader
         this.productLoader = new DataLoader(
             async (productIds: readonly string[]) => {
-                const cacheKey = `products:batch:${productIds.join(',')}`;
-                
+                const cacheKey = `products:batch:${productIds.join(",")}`;
+
                 // Try cache first
                 const cached = await advancedCacheService.get(cacheKey);
                 if (cached) {
@@ -36,23 +36,23 @@ class DataLoaderService {
                 }
 
                 logger.debug(`DataLoader: Fetching ${productIds.length} products`);
-                const products = await Product.find({ 
+                const products = await Product.find({
                     _id: { $in: productIds },
-                    isVisible: true 
+                    isVisible: true
                 })
-                .lean()
-                .select('name price images category brand rating reviewCount stock')
-                .exec();
+                    .lean()
+                    .select("name price images category brand rating reviewCount stock")
+                    .exec();
 
                 // Create a map for O(1) lookup
-                const productMap = new Map(products.map(p => [p._id.toString(), p]));
-                
+                const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+
                 // Return results in the same order as requested IDs
-                const result = productIds.map(id => productMap.get(id) || null);
-                
+                const result = productIds.map((id) => productMap.get(id) || null);
+
                 // Cache the result
                 await advancedCacheService.set(cacheKey, result, 300); // 5 minutes
-                
+
                 return result;
             },
             {
@@ -65,8 +65,8 @@ class DataLoaderService {
         // User loader
         this.userLoader = new DataLoader(
             async (userIds: readonly string[]) => {
-                const cacheKey = `users:batch:${userIds.join(',')}`;
-                
+                const cacheKey = `users:batch:${userIds.join(",")}`;
+
                 const cached = await advancedCacheService.get(cacheKey);
                 if (cached) {
                     logger.debug(`DataLoader cache hit: users batch (${userIds.length} items)`);
@@ -74,19 +74,19 @@ class DataLoaderService {
                 }
 
                 logger.debug(`DataLoader: Fetching ${userIds.length} users`);
-                const users = await User.find({ 
+                const users = await User.find({
                     _id: { $in: userIds },
-                    isActive: true 
+                    isActive: true
                 })
-                .lean()
-                .select('firstName lastName email avatar role createdAt')
-                .exec();
+                    .lean()
+                    .select("firstName lastName email avatar role createdAt")
+                    .exec();
 
-                const userMap = new Map(users.map(u => [u._id.toString(), u]));
-                const result = userIds.map(id => userMap.get(id) || null);
-                
+                const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+                const result = userIds.map((id) => userMap.get(id) || null);
+
                 await advancedCacheService.set(cacheKey, result, 600); // 10 minutes
-                
+
                 return result;
             },
             {
@@ -99,8 +99,8 @@ class DataLoaderService {
         // Category loader
         this.categoryLoader = new DataLoader(
             async (categoryIds: readonly string[]) => {
-                const cacheKey = `categories:batch:${categoryIds.join(',')}`;
-                
+                const cacheKey = `categories:batch:${categoryIds.join(",")}`;
+
                 const cached = await advancedCacheService.get(cacheKey);
                 if (cached) {
                     logger.debug(`DataLoader cache hit: categories batch (${categoryIds.length} items)`);
@@ -108,19 +108,19 @@ class DataLoaderService {
                 }
 
                 logger.debug(`DataLoader: Fetching ${categoryIds.length} categories`);
-                const categories = await Category.find({ 
+                const categories = await Category.find({
                     _id: { $in: categoryIds },
-                    isActive: true 
+                    isActive: true
                 })
-                .lean()
-                .select('name slug description image parentCategory')
-                .exec();
+                    .lean()
+                    .select("name slug description image parentCategory")
+                    .exec();
 
-                const categoryMap = new Map(categories.map(c => [c._id.toString(), c]));
-                const result = categoryIds.map(id => categoryMap.get(id) || null);
-                
+                const categoryMap = new Map(categories.map((c) => [c._id.toString(), c]));
+                const result = categoryIds.map((id) => categoryMap.get(id) || null);
+
                 await advancedCacheService.set(cacheKey, result, 1800); // 30 minutes
-                
+
                 return result;
             },
             {
@@ -133,8 +133,8 @@ class DataLoaderService {
         // Brand loader
         this.brandLoader = new DataLoader(
             async (brandIds: readonly string[]) => {
-                const cacheKey = `brands:batch:${brandIds.join(',')}`;
-                
+                const cacheKey = `brands:batch:${brandIds.join(",")}`;
+
                 const cached = await advancedCacheService.get(cacheKey);
                 if (cached) {
                     logger.debug(`DataLoader cache hit: brands batch (${brandIds.length} items)`);
@@ -142,19 +142,19 @@ class DataLoaderService {
                 }
 
                 logger.debug(`DataLoader: Fetching ${brandIds.length} brands`);
-                const brands = await Brand.find({ 
+                const brands = await Brand.find({
                     _id: { $in: brandIds },
-                    isActive: true 
+                    isActive: true
                 })
-                .lean()
-                .select('name slug description logo website')
-                .exec();
+                    .lean()
+                    .select("name slug description logo website")
+                    .exec();
 
-                const brandMap = new Map(brands.map(b => [b._id.toString(), b]));
-                const result = brandIds.map(id => brandMap.get(id) || null);
-                
+                const brandMap = new Map(brands.map((b) => [b._id.toString(), b]));
+                const result = brandIds.map((id) => brandMap.get(id) || null);
+
                 await advancedCacheService.set(cacheKey, result, 1800); // 30 minutes
-                
+
                 return result;
             },
             {
@@ -168,25 +168,25 @@ class DataLoaderService {
         this.productsByCategoryLoader = new DataLoader(
             async (categoryIds: readonly string[]) => {
                 logger.debug(`DataLoader: Fetching products for ${categoryIds.length} categories`);
-                
+
                 const results = await Promise.all(
                     categoryIds.map(async (categoryId) => {
                         const cacheKey = `products:category:${categoryId}`;
-                        
+
                         const cached = await advancedCacheService.get(cacheKey);
                         if (cached) {
                             return cached;
                         }
 
-                        const products = await Product.find({ 
+                        const products = await Product.find({
                             category: categoryId,
-                            isVisible: true 
+                            isVisible: true
                         })
-                        .lean()
-                        .select('name price images rating reviewCount')
-                        .limit(20) // Limit to prevent huge results
-                        .sort({ createdAt: -1 })
-                        .exec();
+                            .lean()
+                            .select("name price images rating reviewCount")
+                            .limit(20) // Limit to prevent huge results
+                            .sort({ createdAt: -1 })
+                            .exec();
 
                         await advancedCacheService.set(cacheKey, products, 600); // 10 minutes
                         return products;
@@ -206,25 +206,25 @@ class DataLoaderService {
         this.productsByBrandLoader = new DataLoader(
             async (brandIds: readonly string[]) => {
                 logger.debug(`DataLoader: Fetching products for ${brandIds.length} brands`);
-                
+
                 const results = await Promise.all(
                     brandIds.map(async (brandId) => {
                         const cacheKey = `products:brand:${brandId}`;
-                        
+
                         const cached = await advancedCacheService.get(cacheKey);
                         if (cached) {
                             return cached;
                         }
 
-                        const products = await Product.find({ 
+                        const products = await Product.find({
                             brand: brandId,
-                            isVisible: true 
+                            isVisible: true
                         })
-                        .lean()
-                        .select('name price images rating reviewCount')
-                        .limit(20)
-                        .sort({ createdAt: -1 })
-                        .exec();
+                            .lean()
+                            .select("name price images rating reviewCount")
+                            .limit(20)
+                            .sort({ createdAt: -1 })
+                            .exec();
 
                         await advancedCacheService.set(cacheKey, products, 600); // 10 minutes
                         return products;
@@ -321,31 +321,31 @@ class DataLoaderService {
         this.brandLoader.clearAll();
         this.productsByCategoryLoader.clearAll();
         this.productsByBrandLoader.clearAll();
-        
-        logger.debug('All DataLoader caches cleared');
+
+        logger.debug("All DataLoader caches cleared");
     }
 
     /**
      * Clear specific cache
      */
-    clear(type: 'product' | 'user' | 'category' | 'brand', id: string): void {
+    clear(type: "product" | "user" | "category" | "brand", id: string): void {
         switch (type) {
-            case 'product':
+            case "product":
                 this.productLoader.clear(id);
                 break;
-            case 'user':
+            case "user":
                 this.userLoader.clear(id);
                 break;
-            case 'category':
+            case "category":
                 this.categoryLoader.clear(id);
                 this.productsByCategoryLoader.clear(id);
                 break;
-            case 'brand':
+            case "brand":
                 this.brandLoader.clear(id);
                 this.productsByBrandLoader.clear(id);
                 break;
         }
-        
+
         logger.debug(`DataLoader cache cleared: ${type}:${id}`);
     }
 
@@ -355,27 +355,27 @@ class DataLoaderService {
     getStats() {
         return {
             products: {
-                cacheSize: this.productLoader.cacheMap?.size || 0,
+                cacheSize: 0, // cacheMap not available in this version
                 maxBatchSize: 100
             },
             users: {
-                cacheSize: this.userLoader.cacheMap?.size || 0,
+                cacheSize: 0, // cacheMap not available in this version
                 maxBatchSize: 50
             },
             categories: {
-                cacheSize: this.categoryLoader.cacheMap?.size || 0,
+                cacheSize: 0, // cacheMap not available in this version
                 maxBatchSize: 50
             },
             brands: {
-                cacheSize: this.brandLoader.cacheMap?.size || 0,
+                cacheSize: 0, // cacheMap not available in this version
                 maxBatchSize: 50
             },
             productsByCategory: {
-                cacheSize: this.productsByCategoryLoader.cacheMap?.size || 0,
+                cacheSize: 0, // cacheMap not available in this version
                 maxBatchSize: 20
             },
             productsByBrand: {
-                cacheSize: this.productsByBrandLoader.cacheMap?.size || 0,
+                cacheSize: 0, // cacheMap not available in this version
                 maxBatchSize: 20
             }
         };

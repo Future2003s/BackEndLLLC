@@ -18,6 +18,9 @@ class RedisCache {
     private defaultTTL: number = 3600; // 1 hour default
 
     constructor() {
+        // Redis Cloud connection without TLS (based on user's working config)
+        console.log("Connecting to Redis Cloud:", `${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`);
+
         this.client = createClient({
             username: process.env.REDIS_USERNAME || "default",
             password: process.env.REDIS_PASSWORD,
@@ -25,14 +28,8 @@ class RedisCache {
             socket: {
                 host: process.env.REDIS_HOST || "localhost",
                 port: parseInt(process.env.REDIS_PORT || "6379", 10),
-                connectTimeout: 10000,
-                keepAlive: 30000,
-                tls:
-                    process.env.REDIS_TLS === "true"
-                        ? {
-                              rejectUnauthorized: false // For Redis Cloud compatibility
-                          }
-                        : undefined
+                connectTimeout: 15000,
+                keepAlive: true
             }
         });
 
@@ -194,10 +191,10 @@ class RedisCache {
             if (pattern) {
                 const keys = await this.client.keys(pattern);
                 if (keys.length > 0) {
-                    await this.client.del(...keys);
+                    await this.client.del(keys);
                 }
             } else {
-                await this.client.flushdb();
+                await this.client.flushDb();
             }
             return true;
         } catch (error) {

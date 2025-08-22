@@ -1,6 +1,6 @@
-import NodeCache from 'node-cache';
-import { logger } from '../utils/logger';
-import { cacheService } from './cacheService';
+import NodeCache from "node-cache";
+import { logger } from "../utils/logger";
+import { cacheService } from "./cacheService";
 
 /**
  * Simplified Cache Service
@@ -43,7 +43,7 @@ class SimpleCacheService {
             }
 
             // Check Redis cache
-            const redisValue = await cacheService.get<T>('simple', key);
+            const redisValue = await cacheService.get<T>("simple", key);
             if (redisValue !== null) {
                 this.stats.hits++;
                 // Promote to Node cache
@@ -72,9 +72,9 @@ class SimpleCacheService {
 
             // Set in both cache layers
             this.nodeCache.set(fullKey, value, ttl || 600);
-            await cacheService.set('simple', key, value, { ttl: ttl || 3600 });
+            await cacheService.set("simple", key, value);
 
-            logger.debug(`Cache set: ${key} (TTL: ${ttl || 'default'}s)`);
+            logger.debug(`Cache set: ${key} (TTL: ${ttl || "default"}s)`);
         } catch (error) {
             logger.error(`Cache set error for key ${key}:`, error);
         }
@@ -88,7 +88,7 @@ class SimpleCacheService {
 
         try {
             this.nodeCache.del(fullKey);
-            await cacheService.invalidatePattern('simple', key);
+            await cacheService.invalidatePattern("simple", key);
 
             logger.debug(`Cache deleted: ${key}`);
         } catch (error) {
@@ -99,11 +99,7 @@ class SimpleCacheService {
     /**
      * Get or set pattern (cache-aside)
      */
-    async getOrSet<T = any>(
-        key: string,
-        factory: () => Promise<T>,
-        ttl?: number
-    ): Promise<T> {
+    async getOrSet<T = any>(key: string, factory: () => Promise<T>, ttl?: number): Promise<T> {
         // Try to get from cache first
         const cached = await this.get<T>(key);
         if (cached !== null) {
@@ -127,8 +123,8 @@ class SimpleCacheService {
     async clear(): Promise<void> {
         try {
             this.nodeCache.flushAll();
-            await cacheService.invalidatePattern('simple', '*');
-            
+            await cacheService.invalidatePattern("simple", "*");
+
             // Reset stats
             this.stats = {
                 hits: 0,
@@ -136,9 +132,9 @@ class SimpleCacheService {
                 sets: 0
             };
 
-            logger.info('Simple cache cleared');
+            logger.info("Simple cache cleared");
         } catch (error) {
-            logger.error('Cache clear error:', error);
+            logger.error("Cache clear error:", error);
         }
     }
 
@@ -147,12 +143,12 @@ class SimpleCacheService {
      */
     getStats() {
         const total = this.stats.hits + this.stats.misses;
-        
+
         return {
             ...this.stats,
             total,
-            hitRate: total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) : '0.00',
-            missRate: total > 0 ? ((this.stats.misses / total) * 100).toFixed(2) : '0.00',
+            hitRate: total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) : "0.00",
+            missRate: total > 0 ? ((this.stats.misses / total) * 100).toFixed(2) : "0.00",
             nodeSize: this.nodeCache.keys().length,
             nodeMaxSize: 10000
         };
@@ -164,10 +160,10 @@ class SimpleCacheService {
     getHealth() {
         const stats = this.getStats();
         const hitRate = parseFloat(stats.hitRate);
-        
+
         return {
-            status: hitRate > 80 ? 'healthy' : hitRate > 60 ? 'warning' : 'critical',
-            hitRate: stats.hitRate + '%',
+            status: hitRate > 80 ? "healthy" : hitRate > 60 ? "warning" : "critical",
+            hitRate: stats.hitRate + "%",
             nodeCache: { size: stats.nodeSize, maxSize: stats.nodeMaxSize },
             recommendations: this.getRecommendations(stats)
         };
@@ -196,11 +192,11 @@ class SimpleCacheService {
      */
     private setupEventHandlers(): void {
         // Node Cache events
-        this.nodeCache.on('expired', (key) => {
+        this.nodeCache.on("expired", (key) => {
             logger.debug(`Node cache expired: ${key}`);
         });
 
-        this.nodeCache.on('del', (key) => {
+        this.nodeCache.on("del", (key) => {
             logger.debug(`Node cache deleted: ${key}`);
         });
     }
@@ -213,12 +209,12 @@ class SimpleCacheService {
         const hitRate = parseFloat(stats.hitRate);
 
         if (hitRate < 60) {
-            recommendations.push('Consider increasing cache TTL values');
-            recommendations.push('Review cache key patterns for better locality');
+            recommendations.push("Consider increasing cache TTL values");
+            recommendations.push("Review cache key patterns for better locality");
         }
 
         if (stats.nodeSize >= stats.nodeMaxSize * 0.9) {
-            recommendations.push('Consider increasing Node cache size');
+            recommendations.push("Consider increasing Node cache size");
         }
 
         return recommendations;

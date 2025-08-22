@@ -280,7 +280,7 @@ export const performanceTimingMiddleware = (req: Request, res: Response, next: N
         }
 
         // Call original end method
-        originalEnd.call(this, chunk, encoding);
+        return originalEnd.call(this, chunk, encoding);
     };
 
     next();

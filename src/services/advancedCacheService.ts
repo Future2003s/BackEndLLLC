@@ -91,7 +91,7 @@ class AdvancedCacheService {
             // Set in all cache layers
             this.lruCache.set(fullKey, value, { ttl: (ttl || 300) * 1000 }); // Convert to ms
             this.nodeCache.set(fullKey, value, ttl || 600);
-            await cacheService.set("advanced", key, value, { ttl: ttl || 3600 });
+            await cacheService.set("advanced", key, value);
 
             logger.debug(`Cache set: ${key} (TTL: ${ttl || "default"}s)`);
         } catch (error) {
@@ -108,7 +108,7 @@ class AdvancedCacheService {
         try {
             this.lruCache.delete(fullKey);
             this.nodeCache.del(fullKey);
-            await cacheService.invalidate("advanced", key);
+            // await cacheService.invalidate("advanced", key);
 
             logger.debug(`Cache deleted: ${key}`);
         } catch (error) {

@@ -52,8 +52,8 @@ class RedisRateLimitStore {
                 throw new Error("Redis multi failed");
             }
 
-            const totalHits = results[0] as number;
-            const ttl = results[2] as number;
+            const totalHits = Number(results[0]) || 0;
+            const ttl = Number(results[2]) || 0;
             const timeToExpire = ttl > 0 ? ttl * 1000 : this.windowMs;
 
             return { totalHits, timeToExpire };
@@ -104,7 +104,7 @@ function createRateLimiter(config: RateLimitConfig) {
         skipFailedRequests: config.skipFailedRequests || false,
 
         // Use recommended key generator to handle IPv4/IPv6 correctly
-        keyGenerator: config.keyGenerator || ipKeyGenerator,
+        keyGenerator: config.keyGenerator || ((req: Request) => req.ip || "unknown"),
 
         // Custom store implementation
         store: {
@@ -178,7 +178,7 @@ export const authRateLimit = createRateLimiter({
     keyGenerator: (req: Request) => {
         // Rate limit by IP + email combination for more precise limiting
         const email = req.body?.email || "unknown";
-        return `${ipKeyGenerator(req)}:${email}`;
+        return `${ipKeyGenerator(req.ip || "unknown")}:${email}`;
     }
 });
 
@@ -190,7 +190,7 @@ export const failedLoginRateLimit = createRateLimiter({
     skipSuccessfulRequests: true,
     keyGenerator: (req: Request) => {
         const email = req.body?.email || "unknown";
-        return `failed:${ipKeyGenerator(req)}:${email}`;
+        return `failed:${ipKeyGenerator(req.ip || "unknown")}:${email}`;
     }
 });
 
@@ -333,7 +333,7 @@ export const rateLimitAnalytics = {
             const keys = await client.keys(pattern);
 
             if (keys.length > 0) {
-                await client.del(...keys);
+                await client.del(keys);
             }
 
             logger.info(`Cleared ${keys.length} rate limit entries`);

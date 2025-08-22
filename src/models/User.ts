@@ -82,10 +82,10 @@ const UserSchema = new Schema<IUser>(
             trim: true,
             maxlength: [50, "First name cannot be more than 50 characters"],
             // Ensure proper UTF-8 encoding for Vietnamese characters
-            set: function(value: string) {
-                if (typeof value === 'string') {
+            set: function (value: string) {
+                if (typeof value === "string") {
                     // Normalize Vietnamese characters
-                    return value.normalize('NFC');
+                    return value.normalize("NFC");
                 }
                 return value;
             }
@@ -96,10 +96,10 @@ const UserSchema = new Schema<IUser>(
             trim: true,
             maxlength: [50, "Last name cannot be more than 50 characters"],
             // Ensure proper UTF-8 encoding for Vietnamese characters
-            set: function(value: string) {
-                if (typeof value === 'string') {
+            set: function (value: string) {
+                if (typeof value === "string") {
                     // Normalize Vietnamese characters
-                    return value.normalize('NFC');
+                    return value.normalize("NFC");
                 }
                 return value;
             }
@@ -179,7 +179,7 @@ const UserSchema = new Schema<IUser>(
         toJSON: { virtuals: true },
         toObject: { virtuals: true },
         // Ensure proper UTF-8 encoding for Vietnamese characters
-        collation: { locale: 'vi', strength: 2 }
+        collation: { locale: "vi", strength: 2 }
     }
 );
 
@@ -191,11 +191,11 @@ UserSchema.virtual("fullName").get(function () {
 // Ensure proper UTF-8 encoding for Vietnamese characters
 UserSchema.pre("save", function (next) {
     // Normalize Vietnamese characters in firstName and lastName
-    if (this.firstName && typeof this.firstName === 'string') {
-        this.firstName = this.firstName.normalize('NFC');
+    if (this.firstName && typeof this.firstName === "string") {
+        this.firstName = this.firstName.normalize("NFC");
     }
-    if (this.lastName && typeof this.lastName === 'string') {
-        this.lastName = this.lastName.normalize('NFC');
+    if (this.lastName && typeof this.lastName === "string") {
+        this.lastName = this.lastName.normalize("NFC");
     }
     next();
 });
@@ -279,9 +279,9 @@ UserSchema.post("save", async function () {
 });
 
 // Post-remove middleware to invalidate cache
-UserSchema.post("remove", async function () {
-    await this.invalidateCache();
-});
+// UserSchema.post("remove", async function () {
+//     await this.invalidateCache();
+// });
 
 // Post-findOneAndUpdate middleware to invalidate cache
 UserSchema.post("findOneAndUpdate", async function (doc) {

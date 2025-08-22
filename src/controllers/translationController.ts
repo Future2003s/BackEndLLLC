@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
-import { translationService } from '../services/translationService';
-import { Translation, SupportedLanguages, TranslationCategories } from '../models/Translation';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ApiResponse } from '../utils/apiResponse';
-import { paginationService } from '../utils/pagination';
+import { Request, Response } from "express";
+import { translationService } from "../services/translationService";
+import { Translation, SupportedLanguages, TranslationCategories } from "../models/Translation";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ApiResponse } from "../utils/apiResponse";
+// import { paginationService } from '../utils/pagination';
 
 /**
  * Get translation by key
@@ -14,11 +14,13 @@ export const getTranslation = asyncHandler(async (req: Request, res: Response) =
 
     const translation = await translationService.getTranslation(key, language);
 
-    res.json(new ApiResponse(true, 'Translation retrieved successfully', {
-        key,
-        translation,
-        language
-    }));
+    res.json(
+        new ApiResponse(true, "Translation retrieved successfully", {
+            key,
+            translation,
+            language
+        })
+    );
 });
 
 /**
@@ -29,16 +31,18 @@ export const getTranslations = asyncHandler(async (req: Request, res: Response) 
     const language = (req.query.lang as SupportedLanguages) || SupportedLanguages.ENGLISH;
 
     if (!Array.isArray(keys)) {
-        return res.status(400).json(new ApiResponse(false, 'Keys must be an array'));
+        return res.status(400).json(new ApiResponse(false, "Keys must be an array"));
     }
 
     const translations = await translationService.getTranslations(keys, language);
 
-    res.json(new ApiResponse(true, 'Translations retrieved successfully', {
-        translations,
-        language,
-        count: Object.keys(translations).length
-    }));
+    res.json(
+        new ApiResponse(true, "Translations retrieved successfully", {
+            translations,
+            language,
+            count: Object.keys(translations).length
+        })
+    );
 });
 
 /**
@@ -49,7 +53,7 @@ export const getTranslationsByCategory = asyncHandler(async (req: Request, res: 
     const language = (req.query.lang as SupportedLanguages) || SupportedLanguages.ENGLISH;
 
     if (!Object.values(TranslationCategories).includes(category as TranslationCategories)) {
-        return res.status(400).json(new ApiResponse(false, 'Invalid category'));
+        return res.status(400).json(new ApiResponse(false, "Invalid category"));
     }
 
     const translations = await translationService.getTranslationsByCategory(
@@ -57,12 +61,14 @@ export const getTranslationsByCategory = asyncHandler(async (req: Request, res: 
         language
     );
 
-    res.json(new ApiResponse(true, 'Category translations retrieved successfully', {
-        category,
-        translations,
-        language,
-        count: Object.keys(translations).length
-    }));
+    res.json(
+        new ApiResponse(true, "Category translations retrieved successfully", {
+            category,
+            translations,
+            language,
+            count: Object.keys(translations).length
+        })
+    );
 });
 
 /**
@@ -73,11 +79,13 @@ export const getAllTranslations = asyncHandler(async (req: Request, res: Respons
 
     const translations = await translationService.getAllTranslations(language);
 
-    res.json(new ApiResponse(true, 'All translations retrieved successfully', {
-        translations,
-        language,
-        count: Object.keys(translations).length
-    }));
+    res.json(
+        new ApiResponse(true, "All translations retrieved successfully", {
+            translations,
+            language,
+            count: Object.keys(translations).length
+        })
+    );
 });
 
 /**
@@ -93,7 +101,7 @@ export const getPaginatedTranslations = asyncHandler(async (req: Request, res: R
     // Build filter
     const filter: any = {};
     if (category) filter.category = category;
-    if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (isActive !== undefined) filter.isActive = isActive === "true";
 
     // Build query
     let query = Translation.find(filter);
@@ -104,19 +112,29 @@ export const getPaginatedTranslations = asyncHandler(async (req: Request, res: R
     }
 
     // Get paginated results
-    const result = await paginationService.paginate(
-        query,
-        { page, limit },
-        {
-            populate: [
-                { path: 'createdBy', select: 'firstName lastName email' },
-                { path: 'updatedBy', select: 'firstName lastName email' }
-            ],
-            sort: search ? { score: { $meta: 'textScore' } } : { updatedAt: -1 }
-        }
-    );
+    // Simplified pagination without paginationService
+    const skip = (page - 1) * limit;
+    const total = await query.countDocuments();
+    const translations = await query
+        .skip(skip)
+        .limit(limit)
+        .populate([
+            { path: "createdBy", select: "firstName lastName email" },
+            { path: "updatedBy", select: "firstName lastName email" }
+        ])
+        .sort(search ? { score: { $meta: "textScore" } } : { updatedAt: -1 });
 
-    res.json(new ApiResponse(true, 'Translations retrieved successfully', result));
+    const result = {
+        data: translations,
+        pagination: {
+            page,
+            limit,
+            total,
+            pages: Math.ceil(total / limit)
+        }
+    };
+
+    res.json(new ApiResponse(true, "Translations retrieved successfully", result));
 });
 
 /**
@@ -128,18 +146,18 @@ export const createTranslation = asyncHandler(async (req: Request, res: Response
 
     // Validate required fields
     if (!key || !category || !translations) {
-        return res.status(400).json(new ApiResponse(false, 'Key, category, and translations are required'));
+        return res.status(400).json(new ApiResponse(false, "Key, category, and translations are required"));
     }
 
     // Validate category
     if (!Object.values(TranslationCategories).includes(category)) {
-        return res.status(400).json(new ApiResponse(false, 'Invalid category'));
+        return res.status(400).json(new ApiResponse(false, "Invalid category"));
     }
 
     // Validate translations object
     const requiredLanguages = Object.values(SupportedLanguages);
     for (const lang of requiredLanguages) {
-        if (!translations[lang] || translations[lang].trim() === '') {
+        if (!translations[lang] || translations[lang].trim() === "") {
             return res.status(400).json(new ApiResponse(false, `Translation for ${lang} is required`));
         }
     }
@@ -147,7 +165,7 @@ export const createTranslation = asyncHandler(async (req: Request, res: Response
     // Check if key already exists
     const existingTranslation = await Translation.findOne({ key });
     if (existingTranslation) {
-        return res.status(409).json(new ApiResponse(false, 'Translation key already exists'));
+        return res.status(409).json(new ApiResponse(false, "Translation key already exists"));
     }
 
     const translation = await translationService.createTranslation({
@@ -158,7 +176,7 @@ export const createTranslation = asyncHandler(async (req: Request, res: Response
         createdBy: userId
     });
 
-    res.status(201).json(new ApiResponse(true, 'Translation created successfully', translation));
+    res.status(201).json(new ApiResponse(true, "Translation created successfully", translation));
 });
 
 /**
@@ -177,10 +195,10 @@ export const updateTranslation = asyncHandler(async (req: Request, res: Response
     });
 
     if (!translation) {
-        return res.status(404).json(new ApiResponse(false, 'Translation not found'));
+        return res.status(404).json(new ApiResponse(false, "Translation not found"));
     }
 
-    res.json(new ApiResponse(true, 'Translation updated successfully', translation));
+    res.json(new ApiResponse(true, "Translation updated successfully", translation));
 });
 
 /**
@@ -192,10 +210,10 @@ export const deleteTranslation = asyncHandler(async (req: Request, res: Response
     const deleted = await translationService.deleteTranslation(key);
 
     if (!deleted) {
-        return res.status(404).json(new ApiResponse(false, 'Translation not found'));
+        return res.status(404).json(new ApiResponse(false, "Translation not found"));
     }
 
-    res.json(new ApiResponse(true, 'Translation deleted successfully'));
+    res.json(new ApiResponse(true, "Translation deleted successfully"));
 });
 
 /**
@@ -204,8 +222,8 @@ export const deleteTranslation = asyncHandler(async (req: Request, res: Response
 export const searchTranslations = asyncHandler(async (req: Request, res: Response) => {
     const { query, language, category } = req.query;
 
-    if (!query || typeof query !== 'string') {
-        return res.status(400).json(new ApiResponse(false, 'Search query is required'));
+    if (!query || typeof query !== "string") {
+        return res.status(400).json(new ApiResponse(false, "Search query is required"));
     }
 
     const translations = await translationService.searchTranslations(
@@ -214,11 +232,13 @@ export const searchTranslations = asyncHandler(async (req: Request, res: Respons
         category as TranslationCategories
     );
 
-    res.json(new ApiResponse(true, 'Search completed successfully', {
-        query,
-        results: translations,
-        count: translations.length
-    }));
+    res.json(
+        new ApiResponse(true, "Search completed successfully", {
+            query,
+            results: translations,
+            count: translations.length
+        })
+    );
 });
 
 /**
@@ -228,10 +248,10 @@ export const getTranslationStats = asyncHandler(async (req: Request, res: Respon
     const stats = await Translation.aggregate([
         {
             $group: {
-                _id: '$category',
+                _id: "$category",
                 count: { $sum: 1 },
-                active: { $sum: { $cond: ['$isActive', 1, 0] } },
-                inactive: { $sum: { $cond: ['$isActive', 0, 1] } }
+                active: { $sum: { $cond: ["$isActive", 1, 0] } },
+                inactive: { $sum: { $cond: ["$isActive", 0, 1] } }
             }
         },
         {
@@ -244,18 +264,20 @@ export const getTranslationStats = asyncHandler(async (req: Request, res: Respon
             $group: {
                 _id: null,
                 total: { $sum: 1 },
-                active: { $sum: { $cond: ['$isActive', 1, 0] } },
-                inactive: { $sum: { $cond: ['$isActive', 0, 1] } }
+                active: { $sum: { $cond: ["$isActive", 1, 0] } },
+                inactive: { $sum: { $cond: ["$isActive", 0, 1] } }
             }
         }
     ]);
 
-    res.json(new ApiResponse(true, 'Translation statistics retrieved successfully', {
-        byCategory: stats,
-        total: totalStats[0] || { total: 0, active: 0, inactive: 0 },
-        supportedLanguages: Object.values(SupportedLanguages),
-        categories: Object.values(TranslationCategories)
-    }));
+    res.json(
+        new ApiResponse(true, "Translation statistics retrieved successfully", {
+            byCategory: stats,
+            total: totalStats[0] || { total: 0, active: 0, inactive: 0 },
+            supportedLanguages: Object.values(SupportedLanguages),
+            categories: Object.values(TranslationCategories)
+        })
+    );
 });
 
 /**
@@ -266,7 +288,7 @@ export const bulkImportTranslations = asyncHandler(async (req: Request, res: Res
     const userId = (req as any).user.id;
 
     if (!Array.isArray(translations)) {
-        return res.status(400).json(new ApiResponse(false, 'Translations must be an array'));
+        return res.status(400).json(new ApiResponse(false, "Translations must be an array"));
     }
 
     const results = {
@@ -278,7 +300,7 @@ export const bulkImportTranslations = asyncHandler(async (req: Request, res: Res
     for (const translationData of translations) {
         try {
             const existingTranslation = await Translation.findOne({ key: translationData.key });
-            
+
             if (existingTranslation) {
                 await translationService.updateTranslation(translationData.key, {
                     translations: translationData.translations,
@@ -298,7 +320,7 @@ export const bulkImportTranslations = asyncHandler(async (req: Request, res: Res
         }
     }
 
-    res.json(new ApiResponse(true, 'Bulk import completed', results));
+    res.json(new ApiResponse(true, "Bulk import completed", results));
 });
 
 /**
@@ -315,18 +337,23 @@ export const exportTranslations = asyncHandler(async (req: Request, res: Respons
     let exportData;
     if (language) {
         // Export for specific language
-        exportData = translations.reduce((acc, translation) => {
-            acc[translation.key] = translation.translations[language as SupportedLanguages];
-            return acc;
-        }, {} as Record<string, string>);
+        exportData = translations.reduce(
+            (acc, translation) => {
+                acc[translation.key] = translation.translations[language as SupportedLanguages];
+                return acc;
+            },
+            {} as Record<string, string>
+        );
     } else {
         // Export all languages
         exportData = translations;
     }
 
-    res.json(new ApiResponse(true, 'Translations exported successfully', {
-        data: exportData,
-        count: Array.isArray(exportData) ? exportData.length : Object.keys(exportData).length,
-        exportedAt: new Date().toISOString()
-    }));
+    res.json(
+        new ApiResponse(true, "Translations exported successfully", {
+            data: exportData,
+            count: Array.isArray(exportData) ? exportData.length : Object.keys(exportData).length,
+            exportedAt: new Date().toISOString()
+        })
+    );
 });
