@@ -1,27 +1,27 @@
-import { Request, Response, NextFunction } from 'express';
-import { Brand } from '../models/Brand';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ResponseHandler } from '../utils/response';
-import { AppError } from '../utils/AppError';
+import { Request, Response, NextFunction } from "express";
+import { Brand } from "../models/Brand";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ResponseHandler } from "../utils/response";
+import { AppError } from "../utils/AppError";
 
 // @desc    Get all brands
 // @route   GET /api/v1/brands
 // @access  Public
 export const getBrands = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { includeInactive, search, page = 1, limit = 50 } = req.query;
-    
+
     const filter: any = {};
-    
-    if (includeInactive !== 'true') {
+
+    if (includeInactive !== "true") {
         filter.isActive = true;
     }
-    
+
     if (search) {
         filter.$text = { $search: search as string };
     }
 
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    
+
     const [brands, total] = await Promise.all([
         Brand.find(filter)
             .sort({ name: 1 })
@@ -33,7 +33,7 @@ export const getBrands = asyncHandler(async (req: Request, res: Response, next: 
     // Temporary: bypass fastJSON for brands
     res.status(200).json({
         success: true,
-        message: 'Brands retrieved successfully',
+        message: "Brands retrieved successfully",
         data: brands,
         pagination: {
             page: parseInt(page as string),
@@ -51,10 +51,10 @@ export const getBrand = asyncHandler(async (req: Request, res: Response, next: N
     const brand = await Brand.findById(req.params.id);
 
     if (!brand) {
-        return next(new AppError('Brand not found', 404));
+        return next(new AppError("Brand not found", 404));
     }
 
-    ResponseHandler.success(res, brand, 'Brand retrieved successfully');
+    ResponseHandler.success(res, brand, "Brand retrieved successfully");
 });
 
 // @desc    Get brand by slug
@@ -64,10 +64,10 @@ export const getBrandBySlug = asyncHandler(async (req: Request, res: Response, n
     const brand = await Brand.findOne({ slug: req.params.slug });
 
     if (!brand) {
-        return next(new AppError('Brand not found', 404));
+        return next(new AppError("Brand not found", 404));
     }
 
-    ResponseHandler.success(res, brand, 'Brand retrieved successfully');
+    ResponseHandler.success(res, brand, "Brand retrieved successfully");
 });
 
 // @desc    Create brand
@@ -76,33 +76,63 @@ export const getBrandBySlug = asyncHandler(async (req: Request, res: Response, n
 export const createBrand = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { name, description, logo, website, isActive, seo } = req.body;
 
+    // Generate base slug from name
+    let baseSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+    // Ensure slug is unique
+    let slug = baseSlug;
+    let counter = 1;
+    while (await Brand.findOne({ slug })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+
     const brand = await Brand.create({
         name,
         description,
+        slug,
         logo,
         website,
         isActive,
         seo
     });
 
-    ResponseHandler.created(res, brand, 'Brand created successfully');
+    ResponseHandler.created(res, brand, "Brand created successfully");
 });
 
 // @desc    Update brand
 // @route   PUT /api/v1/brands/:id
 // @access  Private (Admin)
 export const updateBrand = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const brand = await Brand.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true, runValidators: true }
-    );
+    const updateData = { ...req.body };
 
-    if (!brand) {
-        return next(new AppError('Brand not found', 404));
+    // Generate new slug if name is being updated
+    if (updateData.name) {
+        let baseSlug = updateData.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+
+        // Ensure slug is unique (exclude current brand from check)
+        let slug = baseSlug;
+        let counter = 1;
+        while (await Brand.findOne({ slug, _id: { $ne: req.params.id } })) {
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+        }
+        updateData.slug = slug;
     }
 
-    ResponseHandler.success(res, brand, 'Brand updated successfully');
+    const brand = await Brand.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+
+    if (!brand) {
+        return next(new AppError("Brand not found", 404));
+    }
+
+    ResponseHandler.success(res, brand, "Brand updated successfully");
 });
 
 // @desc    Delete brand
@@ -112,17 +142,17 @@ export const deleteBrand = asyncHandler(async (req: Request, res: Response, next
     const brand = await Brand.findById(req.params.id);
 
     if (!brand) {
-        return next(new AppError('Brand not found', 404));
+        return next(new AppError("Brand not found", 404));
     }
 
     // Check if brand has products
     if (brand.productCount > 0) {
-        return next(new AppError('Cannot delete brand with products', 400));
+        return next(new AppError("Cannot delete brand with products", 400));
     }
 
     await Brand.findByIdAndDelete(req.params.id);
 
-    ResponseHandler.success(res, null, 'Brand deleted successfully');
+    ResponseHandler.success(res, null, "Brand deleted successfully");
 });
 
 // @desc    Get popular brands
@@ -135,5 +165,5 @@ export const getPopularBrands = asyncHandler(async (req: Request, res: Response,
         .sort({ productCount: -1 })
         .limit(parseInt(limit as string));
 
-    ResponseHandler.success(res, brands, 'Popular brands retrieved successfully');
+    ResponseHandler.success(res, brands, "Popular brands retrieved successfully");
 });

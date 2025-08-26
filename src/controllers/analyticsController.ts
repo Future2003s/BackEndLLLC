@@ -259,6 +259,161 @@ export const getConversionFunnel = asyncHandler(async (req: Request, res: Respon
 });
 
 /**
+ * Get revenue analytics by month/year
+ */
+export const getRevenueAnalytics = asyncHandler(async (req: Request, res: Response) => {
+    const { period = "month", year = new Date().getFullYear(), startDate, endDate, groupBy = "month" } = req.query;
+
+    let matchStage: any = {
+        status: { $in: ["delivered", "processing", "shipped"] }, // Only count paid orders
+        "payment.status": "completed"
+    };
+
+    // Date filtering
+    if (startDate && endDate) {
+        matchStage.createdAt = {
+            $gte: new Date(startDate as string),
+            $lte: new Date(endDate as string)
+        };
+    } else if (year) {
+        matchStage.createdAt = {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31T23:59:59.999Z`)
+        };
+    }
+
+    // Aggregation pipeline for revenue by month
+    const pipeline = [
+        { $match: matchStage },
+        {
+            $group: {
+                _id: {
+                    year: { $year: "$createdAt" },
+                    month: { $month: "$createdAt" },
+                    ...(groupBy === "day" && { day: { $dayOfMonth: "$createdAt" } })
+                },
+                totalRevenue: { $sum: "$total" },
+                totalOrders: { $sum: 1 },
+                averageOrderValue: { $avg: "$total" },
+                totalItems: { $sum: { $sum: "$items.quantity" } }
+            }
+        },
+        {
+            $sort: {
+                "_id.year": 1,
+                "_id.month": 1,
+                ...(groupBy === "day" && { "_id.day": 1 })
+            }
+        }
+    ];
+
+    const revenueData = await Order.aggregate(pipeline);
+
+    // Calculate totals
+    const totals = {
+        totalRevenue: revenueData.reduce((sum, item) => sum + item.totalRevenue, 0),
+        totalOrders: revenueData.reduce((sum, item) => sum + item.totalOrders, 0),
+        totalItems: revenueData.reduce((sum, item) => sum + item.totalItems, 0),
+        averageOrderValue: 0
+    };
+    totals.averageOrderValue = totals.totalOrders > 0 ? totals.totalRevenue / totals.totalOrders : 0;
+
+    // Format data for frontend
+    const formattedData = revenueData.map((item) => ({
+        period:
+            groupBy === "day"
+                ? `${item._id.year}-${String(item._id.month).padStart(2, "0")}-${String(item._id.day).padStart(2, "0")}`
+                : `${item._id.year}-${String(item._id.month).padStart(2, "0")}`,
+        year: item._id.year,
+        month: item._id.month,
+        ...(groupBy === "day" && { day: item._id.day }),
+        revenue: Math.round(item.totalRevenue * 100) / 100,
+        orders: item.totalOrders,
+        averageOrderValue: Math.round(item.averageOrderValue * 100) / 100,
+        items: item.totalItems
+    }));
+
+    const analytics = {
+        period: groupBy,
+        year: year,
+        data: formattedData,
+        summary: {
+            totalRevenue: Math.round(totals.totalRevenue * 100) / 100,
+            totalOrders: totals.totalOrders,
+            totalItems: totals.totalItems,
+            averageOrderValue: Math.round(totals.averageOrderValue * 100) / 100,
+            periodsWithSales: formattedData.length
+        },
+        filters: {
+            period,
+            year,
+            startDate,
+            endDate,
+            groupBy
+        },
+        generatedAt: new Date()
+    };
+
+    res.json(new ApiResponse(true, "Revenue analytics retrieved successfully", analytics));
+});
+
+/**
+ * Get top selling products by revenue
+ */
+export const getTopSellingProducts = asyncHandler(async (req: Request, res: Response) => {
+    const { limit = 10, startDate, endDate, period = "all" } = req.query;
+
+    let matchStage: any = {
+        status: { $in: ["delivered", "processing", "shipped"] },
+        "payment.status": "completed"
+    };
+
+    if (startDate && endDate) {
+        matchStage.createdAt = {
+            $gte: new Date(startDate as string),
+            $lte: new Date(endDate as string)
+        };
+    }
+
+    const pipeline = [
+        { $match: matchStage },
+        { $unwind: "$items" },
+        {
+            $group: {
+                _id: "$items.product",
+                productName: { $first: "$items.name" },
+                totalRevenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+                totalQuantitySold: { $sum: "$items.quantity" },
+                totalOrders: { $sum: 1 },
+                averagePrice: { $avg: "$items.price" }
+            }
+        },
+        { $sort: { totalRevenue: -1 } },
+        { $limit: Number(limit) }
+    ];
+
+    const topProducts = await Order.aggregate(pipeline);
+
+    const formattedProducts = topProducts.map((product) => ({
+        productId: product._id,
+        productName: product.productName,
+        totalRevenue: Math.round(product.totalRevenue * 100) / 100,
+        totalQuantitySold: product.totalQuantitySold,
+        totalOrders: product.totalOrders,
+        averagePrice: Math.round(product.averagePrice * 100) / 100
+    }));
+
+    res.json(
+        new ApiResponse(true, "Top selling products retrieved successfully", {
+            products: formattedProducts,
+            period,
+            filters: { startDate, endDate, limit },
+            generatedAt: new Date()
+        })
+    );
+});
+
+/**
  * Export analytics data
  */
 export const exportAnalytics = asyncHandler(async (req: Request, res: Response) => {

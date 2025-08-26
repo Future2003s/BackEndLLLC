@@ -11,6 +11,8 @@ import {
     getPerformanceAnalytics,
     getTopProducts,
     getConversionFunnel,
+    getRevenueAnalytics,
+    getTopSellingProducts,
     exportAnalytics,
     clearAnalyticsCache
 } from "../controllers/analyticsController";
@@ -45,6 +47,18 @@ router.get("/performance", authorize("admin"), staticDataCache(60), adminRateLim
 
 // Conversion funnel (admin and seller)
 router.get("/funnel", authorize("admin", "seller"), staticDataCache(300), adminRateLimit, getConversionFunnel);
+
+// Revenue analytics (admin and seller)
+router.get("/revenue", authorize("admin", "seller"), staticDataCache(300), adminRateLimit, getRevenueAnalytics);
+
+// Top selling products by revenue (admin and seller)
+router.get(
+    "/products/top-selling",
+    authorize("admin", "seller"),
+    staticDataCache(600),
+    adminRateLimit,
+    getTopSellingProducts
+);
 
 // Export analytics (admin only)
 router.get("/export", authorize("admin"), adminRateLimit, exportAnalytics);
