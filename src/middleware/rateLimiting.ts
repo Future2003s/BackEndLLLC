@@ -103,9 +103,6 @@ function createRateLimiter(config: RateLimitConfig) {
         skipSuccessfulRequests: config.skipSuccessfulRequests || false,
         skipFailedRequests: config.skipFailedRequests || false,
 
-        // Use recommended key generator to handle IPv4/IPv6 correctly
-        keyGenerator: config.keyGenerator || ((req: Request) => req.ip || "unknown"),
-
         // Custom store implementation
         store: {
             incr: async (key: string, cb: Function) => {
@@ -178,7 +175,7 @@ export const authRateLimit = createRateLimiter({
     keyGenerator: (req: Request) => {
         // Rate limit by IP + email combination for more precise limiting
         const email = req.body?.email || "unknown";
-        return `${ipKeyGenerator(req.ip || "unknown")}:${email}`;
+        return `${ipKeyGenerator(req)}:${email}`;
     }
 });
 
@@ -190,7 +187,7 @@ export const failedLoginRateLimit = createRateLimiter({
     skipSuccessfulRequests: true,
     keyGenerator: (req: Request) => {
         const email = req.body?.email || "unknown";
-        return `failed:${ipKeyGenerator(req.ip || "unknown")}:${email}`;
+        return `failed:${ipKeyGenerator(req)}:${email}`;
     }
 });
 

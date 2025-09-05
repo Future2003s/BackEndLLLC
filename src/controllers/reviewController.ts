@@ -1,37 +1,28 @@
-import { Request, Response, NextFunction } from 'express';
-import { ReviewService } from '../services/reviewService';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ResponseHandler } from '../utils/response';
+import { Request, Response, NextFunction } from "express";
+import { ReviewService } from "../services/reviewService";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ResponseHandler } from "../utils/response";
+import { config } from "../config/config";
 
 // @desc    Get all reviews
 // @route   GET /api/v1/reviews
 // @access  Public
 export const getReviews = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const {
-        page,
-        limit,
-        sort,
-        order,
-        product,
-        user,
-        rating,
-        status,
-        isVerifiedPurchase
-    } = req.query;
+    const { page, limit, sort, order, product, user, rating, status, isVerifiedPurchase } = req.query;
 
     const filters = {
         product: product as string,
         user: user as string,
         rating: rating ? parseInt(rating as string) : undefined,
-        status: status as 'pending' | 'approved' | 'rejected',
-        isVerifiedPurchase: isVerifiedPurchase ? isVerifiedPurchase === 'true' : undefined
+        status: status as "pending" | "approved" | "rejected",
+        isVerifiedPurchase: isVerifiedPurchase ? isVerifiedPurchase === "true" : undefined
     };
 
     const query = {
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
         sort: sort as string,
-        order: order as 'asc' | 'desc'
+        order: order as "asc" | "desc"
     };
 
     const result = await ReviewService.getReviews(filters, query);
@@ -42,7 +33,7 @@ export const getReviews = asyncHandler(async (req: Request, res: Response, next:
         result.pagination.page,
         result.pagination.limit,
         result.pagination.total,
-        'Reviews retrieved successfully'
+        "Reviews retrieved successfully"
     );
 });
 
@@ -51,7 +42,7 @@ export const getReviews = asyncHandler(async (req: Request, res: Response, next:
 // @access  Public
 export const getReview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const review = await ReviewService.getReviewById(req.params.id);
-    ResponseHandler.success(res, review, 'Review retrieved successfully');
+    ResponseHandler.success(res, review, "Review retrieved successfully");
 });
 
 // @desc    Create review
@@ -59,7 +50,7 @@ export const getReview = asyncHandler(async (req: Request, res: Response, next: 
 // @access  Private
 export const createReview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const review = await ReviewService.createReview(req.body, req.user.id);
-    ResponseHandler.created(res, review, 'Review created successfully');
+    ResponseHandler.created(res, review, "Review created successfully");
 });
 
 // @desc    Update review
@@ -67,7 +58,7 @@ export const createReview = asyncHandler(async (req: Request, res: Response, nex
 // @access  Private
 export const updateReview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const review = await ReviewService.updateReview(req.params.id, req.body, req.user.id);
-    ResponseHandler.success(res, review, 'Review updated successfully');
+    ResponseHandler.success(res, review, "Review updated successfully");
 });
 
 // @desc    Delete review
@@ -75,7 +66,7 @@ export const updateReview = asyncHandler(async (req: Request, res: Response, nex
 // @access  Private
 export const deleteReview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     await ReviewService.deleteReview(req.params.id, req.user.id);
-    ResponseHandler.success(res, null, 'Review deleted successfully');
+    ResponseHandler.success(res, null, "Review deleted successfully");
 });
 
 // @desc    Get product reviews
@@ -89,14 +80,14 @@ export const getProductReviews = asyncHandler(async (req: Request, res: Response
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
         sort: sort as string,
-        order: order as 'asc' | 'desc'
+        order: order as "asc" | "desc"
     };
 
     const result = await ReviewService.getProductReviews(productId, query);
 
     res.status(200).json({
         success: true,
-        message: 'Product reviews retrieved successfully',
+        message: "Product reviews retrieved successfully",
         data: result.reviews,
         pagination: result.pagination,
         stats: result.stats
@@ -109,7 +100,7 @@ export const getProductReviews = asyncHandler(async (req: Request, res: Response
 export const getProductReviewStats = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { productId } = req.params;
     const stats = await ReviewService.getProductReviewStats(productId);
-    ResponseHandler.success(res, stats, 'Product review stats retrieved successfully');
+    ResponseHandler.success(res, stats, "Product review stats retrieved successfully");
 });
 
 // @desc    Moderate review
@@ -117,17 +108,12 @@ export const getProductReviewStats = asyncHandler(async (req: Request, res: Resp
 // @access  Private (Admin)
 export const moderateReview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { status, moderationNote } = req.body;
-    
-    if (!['approved', 'rejected'].includes(status)) {
-        return ResponseHandler.badRequest(res, 'Status must be approved or rejected');
+
+    if (!["approved", "rejected"].includes(status)) {
+        return ResponseHandler.badRequest(res, "Status must be approved or rejected");
     }
 
-    const review = await ReviewService.moderateReview(
-        req.params.id,
-        status,
-        req.user.id,
-        moderationNote
-    );
+    const review = await ReviewService.moderateReview(req.params.id, status, req.user.id, moderationNote);
 
     ResponseHandler.success(res, review, `Review ${status} successfully`);
 });
@@ -137,14 +123,14 @@ export const moderateReview = asyncHandler(async (req: Request, res: Response, n
 // @access  Public
 export const markReviewHelpful = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { isHelpful } = req.body;
-    
-    if (typeof isHelpful !== 'boolean') {
-        return ResponseHandler.badRequest(res, 'isHelpful must be a boolean value');
+
+    if (typeof isHelpful !== "boolean") {
+        return ResponseHandler.badRequest(res, "isHelpful must be a boolean value");
     }
 
     const review = await ReviewService.markReviewHelpful(req.params.id, isHelpful);
-    
-    const message = isHelpful ? 'Review marked as helpful' : 'Review marked as not helpful';
+
+    const message = isHelpful ? "Review marked as helpful" : "Review marked as not helpful";
     ResponseHandler.success(res, review, message);
 });
 
@@ -159,7 +145,7 @@ export const getUserReviews = asyncHandler(async (req: Request, res: Response, n
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
         sort: sort as string,
-        order: order as 'asc' | 'desc'
+        order: order as "asc" | "desc"
     };
 
     const result = await ReviewService.getReviews(filters, query);
@@ -170,7 +156,7 @@ export const getUserReviews = asyncHandler(async (req: Request, res: Response, n
         result.pagination.page,
         result.pagination.limit,
         result.pagination.total,
-        'User reviews retrieved successfully'
+        "User reviews retrieved successfully"
     );
 });
 
@@ -183,20 +169,20 @@ export const getReviewsByRating = asyncHandler(async (req: Request, res: Respons
 
     const ratingNum = parseInt(rating);
     if (ratingNum < 1 || ratingNum > 5) {
-        return ResponseHandler.badRequest(res, 'Rating must be between 1 and 5');
+        return ResponseHandler.badRequest(res, "Rating must be between 1 and 5");
     }
 
-    const filters = { 
+    const filters = {
         rating: ratingNum,
         product: product as string,
-        status: 'approved' as const
+        status: "approved" as const
     };
-    
+
     const query = {
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
         sort: sort as string,
-        order: order as 'asc' | 'desc'
+        order: order as "asc" | "desc"
     };
 
     const result = await ReviewService.getReviews(filters, query);

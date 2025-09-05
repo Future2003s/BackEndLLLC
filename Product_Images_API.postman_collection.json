@@ -1,0 +1,133 @@
+{
+    "info": {
+        "_postman_id": "a1b2c3d4-e5f6-7890-1234-abcdef123456",
+        "name": "Product Images API",
+        "description": "API endpoints for managing product images, including upload, metadata updates, and deletion.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Upload Product Images",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "images",
+                            "type": "file",
+                            "description": "Select one or more image files to upload (max 5 per request).",
+                            "src": []
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/v1/products/{{productId}}/images",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "products", "{{productId}}", "images"]
+                },
+                "description": "Uploads one or more images for a specific product.\n\n**Authentication:** Requires Admin or Seller token.\n**Product ID:** The `productId` must exist.\n**Body:** Use the `images` key in the form-data body to attach your files."
+            },
+            "response": []
+        },
+        {
+            "name": "Update Image Metadata",
+            "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"images\": [\n        { \"imageId\": \"{{imageId}}\", \"alt\": \"A beautiful new description for the image.\", \"order\": 1 },\n        { \"imageId\": \"ANOTHER_IMAGE_ID\", \"isMain\": true, \"order\": 0 }\n    ]\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/v1/products/{{productId}}/images",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "products", "{{productId}}", "images"]
+                },
+                "description": "Updates metadata for one or more images of a product, such as alt text, display order, or setting a main image.\n\n**Authentication:** Requires Admin or Seller token.\n**Logic:** Only one image can be the main image (`isMain: true`). Setting one to true will automatically set all others to false."
+            },
+            "response": []
+        },
+        {
+            "name": "Delete Product Images",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"imageIds\": [\n        \"{{imageId}}\",\n        \"ANOTHER_IMAGE_ID_TO_DELETE\"\n    ]\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/v1/products/{{productId}}/images",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "products", "{{productId}}", "images"]
+                },
+                "description": "Deletes one or more images from a product.\n\n**Authentication:** Requires Admin or Seller token.\n**Important:** This action is permanent and will delete the image file from the server/Cloudinary as well."
+            },
+            "response": []
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{adminToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [""]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [""]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:8081",
+            "type": "string",
+            "description": "The base URL of the API server."
+        },
+        {
+            "key": "adminToken",
+            "value": "PASTE_YOUR_ADMIN_OR_SELLER_TOKEN_HERE",
+            "type": "string",
+            "description": "JWT token for an authenticated admin or seller user."
+        },
+        {
+            "key": "productId",
+            "value": "PASTE_A_VALID_PRODUCT_ID_HERE",
+            "type": "string",
+            "description": "The ID of the product you want to manage images for."
+        },
+        {
+            "key": "imageId",
+            "value": "PASTE_A_VALID_IMAGE_ID_HERE",
+            "type": "string",
+            "description": "The ID of a specific image within a product (get this from the product details response)."
+        }
+    ]
+}

@@ -20,6 +20,12 @@ import {
     getProductsByCategory,
     getProductsByBrand
 } from "../controllers/productController";
+import {
+    uploadProductImages,
+    updateProductImageMetadata,
+    deleteProductImages
+} from "../controllers/productImageController";
+import { uploadProductImages as uploadMiddleware, handleMulterError } from "../middleware/upload";
 
 const router = Router();
 
@@ -51,6 +57,38 @@ router.put(
     validateProductId,
     noValidation,
     updateProductStock
+);
+
+// Image management routes
+router.post(
+    "/:id/images",
+    protect,
+    authorize("admin", "seller"),
+    adminRateLimit,
+    validateProductId,
+    uploadMiddleware,
+    handleMulterError,
+    uploadProductImages
+);
+
+router.put(
+    "/:id/images",
+    protect,
+    authorize("admin", "seller"),
+    adminRateLimit,
+    validateProductId,
+    noValidation,
+    updateProductImageMetadata
+);
+
+router.delete(
+    "/:id/images",
+    protect,
+    authorize("admin", "seller"),
+    adminRateLimit,
+    validateProductId,
+    noValidation,
+    deleteProductImages
 );
 
 export default router;

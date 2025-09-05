@@ -83,6 +83,7 @@
         "axios": "^1.11.0",
         "bcryptjs": "^3.0.2",
         "clinic": "^13.0.0",
+        "cloudinary": "^2.7.0",
         "compression": "^1.8.1",
         "compression-webpack-plugin": "^11.1.0",
         "cors": "^2.8.5",
