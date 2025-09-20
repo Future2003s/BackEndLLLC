@@ -12,6 +12,7 @@ router.post("/guest", unifiedValidation_1.validateCreateOrder, orderController_1
 router.use(auth_1.protect);
 // Customer routes (authentication required)
 router.get("/", unifiedValidation_1.validatePagination, orderController_1.getUserOrders);
+router.get("/recent", orderController_1.getRecentOrders);
 router.get("/:id", unifiedValidation_1.validateOrderId, orderController_1.getOrder);
 router.post("/", unifiedValidation_1.validateCreateOrder, orderController_1.createOrder);
 router.put("/:id/cancel", unifiedValidation_1.validateOrderId, orderController_1.cancelOrder);

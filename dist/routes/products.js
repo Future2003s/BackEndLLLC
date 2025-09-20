@@ -6,6 +6,8 @@ const workingValidation_1 = require("../middleware/workingValidation");
 const rateLimiting_1 = require("../middleware/rateLimiting");
 const compression_1 = require("../middleware/compression");
 const productController_1 = require("../controllers/productController");
+const productImageController_1 = require("../controllers/productImageController");
+const upload_1 = require("../middleware/upload");
 const router = (0, express_1.Router)();
 // Public routes with optimized caching and rate limiting
 router.get("/search", rateLimiting_1.searchRateLimit, productController_1.searchProducts);
@@ -19,4 +21,8 @@ router.post("/", auth_1.protect, (0, auth_1.authorize)("admin", "seller"), rateL
 router.put("/:id", auth_1.protect, (0, auth_1.authorize)("admin", "seller"), rateLimiting_1.adminRateLimit, workingValidation_1.validateProductId, workingValidation_1.validateUpdateProduct, productController_1.updateProduct);
 router.delete("/:id", auth_1.protect, (0, auth_1.authorize)("admin", "seller"), rateLimiting_1.adminRateLimit, workingValidation_1.validateProductId, productController_1.deleteProduct);
 router.put("/:id/stock", auth_1.protect, (0, auth_1.authorize)("admin", "seller"), rateLimiting_1.adminRateLimit, workingValidation_1.validateProductId, workingValidation_1.noValidation, productController_1.updateProductStock);
+// Image management routes
+router.post("/:id/images", auth_1.protect, (0, auth_1.authorize)("admin", "seller"), rateLimiting_1.adminRateLimit, workingValidation_1.validateProductId, upload_1.uploadProductImages, upload_1.handleMulterError, productImageController_1.uploadProductImages);
+router.put("/:id/images", auth_1.protect, (0, auth_1.authorize)("admin", "seller"), rateLimiting_1.adminRateLimit, workingValidation_1.validateProductId, workingValidation_1.noValidation, productImageController_1.updateProductImageMetadata);
+router.delete("/:id/images", auth_1.protect, (0, auth_1.authorize)("admin", "seller"), rateLimiting_1.adminRateLimit, workingValidation_1.validateProductId, workingValidation_1.noValidation, productImageController_1.deleteProductImages);
 exports.default = router;

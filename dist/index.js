@@ -16,6 +16,8 @@ const logger_1 = require("./utils/logger");
 const cacheService_1 = require("./services/cacheService");
 const performance_1 = require("./utils/performance");
 const i18n_1 = require("./middleware/i18n");
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_1 = require("./config/swagger");
 class OptimizedApp {
     app;
     middlewareStack;
@@ -54,6 +56,9 @@ class OptimizedApp {
                 uptime: process.uptime()
             });
         });
+        // OpenAPI/Swagger docs
+        this.app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec, { explorer: true }));
+        this.app.get("/openapi.json", (req, res) => res.json(swagger_1.swaggerSpec));
         // API routes
         this.app.use("/api/v1", routes_1.default);
     }

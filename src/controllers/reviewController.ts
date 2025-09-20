@@ -49,7 +49,16 @@ export const getReview = asyncHandler(async (req: Request, res: Response, next: 
 // @route   POST /api/v1/reviews
 // @access  Private
 export const createReview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const review = await ReviewService.createReview(req.body, req.user.id);
+    // Normalize payload to expected service format
+    const payload = {
+        product: (req.body.product as string) || (req.body.productId as string),
+        rating: parseInt(req.body.rating, 10),
+        title: req.body.title,
+        comment: req.body.comment,
+        images: req.body.images
+    };
+
+    const review = await ReviewService.createReview(payload, req.user.id);
     ResponseHandler.created(res, review, "Review created successfully");
 });
 
@@ -57,7 +66,13 @@ export const createReview = asyncHandler(async (req: Request, res: Response, nex
 // @route   PUT /api/v1/reviews/:id
 // @access  Private
 export const updateReview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const review = await ReviewService.updateReview(req.params.id, req.body, req.user.id);
+    const payload = {
+        rating: req.body.rating !== undefined ? parseInt(req.body.rating, 10) : undefined,
+        title: req.body.title,
+        comment: req.body.comment,
+        images: req.body.images
+    };
+    const review = await ReviewService.updateReview(req.params.id, payload, req.user.id);
     ResponseHandler.success(res, review, "Review updated successfully");
 });
 
@@ -128,7 +143,7 @@ export const markReviewHelpful = asyncHandler(async (req: Request, res: Response
         return ResponseHandler.badRequest(res, "isHelpful must be a boolean value");
     }
 
-    const review = await ReviewService.markReviewHelpful(req.params.id, isHelpful);
+    const review = await ReviewService.markReviewHelpful(req.params.id, isHelpful, req.ip);
 
     const message = isHelpful ? "Review marked as helpful" : "Review marked as not helpful";
     ResponseHandler.success(res, review, message);
@@ -195,4 +210,16 @@ export const getReviewsByRating = asyncHandler(async (req: Request, res: Respons
         result.pagination.total,
         `Reviews with ${rating} stars retrieved successfully`
     );
+});
+
+// @desc    Review analytics & reporting
+// @route   GET /api/v1/reviews/analytics
+// @access  Private (Admin)
+export const getReviewAnalytics = asyncHandler(async (req: Request, res: Response) => {
+    const { startDate, endDate } = req.query;
+    const data = await ReviewService.getReviewAnalytics({
+        startDate: startDate as string | undefined,
+        endDate: endDate as string | undefined
+    });
+    ResponseHandler.success(res, data, "Review analytics retrieved successfully");
 });

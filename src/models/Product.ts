@@ -74,6 +74,12 @@ export interface IProduct extends Document {
     createdAt: Date;
     updatedAt: Date;
 
+    // Honey-specific fields
+    honeyType?: "acacia" | "wildflower" | "manuka" | "clover" | "eucalyptus" | "lavender";
+    purity?: number; // Percentage (0-100)
+    harvestDate?: Date;
+    expiryDate?: Date;
+
     // Virtual fields
     finalPrice: number;
     isInStock: boolean;
@@ -241,6 +247,24 @@ const ProductSchema = new Schema<IProduct>(
         updatedBy: {
             type: Schema.Types.ObjectId,
             ref: "User"
+        },
+
+        // Honey-specific fields
+        honeyType: {
+            type: String,
+            enum: ["acacia", "wildflower", "manuka", "clover", "eucalyptus", "lavender"],
+            default: "wildflower"
+        },
+        purity: {
+            type: Number,
+            min: [0, "Purity cannot be less than 0%"],
+            max: [100, "Purity cannot be more than 100%"]
+        },
+        harvestDate: {
+            type: Date
+        },
+        expiryDate: {
+            type: Date
         }
     },
     {

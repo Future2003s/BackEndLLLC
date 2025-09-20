@@ -5,6 +5,8 @@ const Review_1 = require("../models/Review");
 const Product_1 = require("../models/Product");
 const AppError_1 = require("../utils/AppError");
 const logger_1 = require("../utils/logger");
+const spamFilter_1 = require("../utils/spamFilter");
+const redis_1 = require("../config/redis");
 class ReviewService {
     /**
      * Create a new review
@@ -26,14 +28,20 @@ class ReviewService {
             }
             // TODO: Check if user purchased this product (for verified purchase)
             const isVerifiedPurchase = false; // Placeholder
-            // Create review
+            // Spam/profanity analysis
+            const analysis = (0, spamFilter_1.analyzeContent)(reviewData.title || "", reviewData.comment || "");
+            // Create review (auto-flag if suspicious)
             const review = await Review_1.Review.create({
                 ...reviewData,
                 user: userId,
-                isVerifiedPurchase
+                isVerifiedPurchase,
+                title: analysis.sanitizedTitle,
+                comment: analysis.sanitizedComment,
+                status: analysis.isSuspicious ? "pending" : "approved",
+                moderationNote: analysis.isSuspicious ? `Auto-flagged: ${analysis.reasons.join(", ")}` : undefined
             });
             await review.populate(["user", "product"]);
-            // Update product rating statistics
+            // Update product rating statistics if approved immediately
             await this.updateProductRatingStats(reviewData.product);
             logger_1.logger.info(`Review created for product: ${reviewData.product} by user: ${userId}`);
             return review;
@@ -126,6 +134,16 @@ class ReviewService {
             if (review.user.toString() !== userId) {
                 throw new AppError_1.AppError("Not authorized to update this review", 403);
             }
+            // If updating text fields, run content analysis again
+            if (updateData.title !== undefined || updateData.comment !== undefined) {
+                const analysis = (0, spamFilter_1.analyzeContent)(updateData.title || "", updateData.comment || "");
+                updateData.title = analysis.sanitizedTitle;
+                updateData.comment = analysis.sanitizedComment;
+                if (analysis.isSuspicious) {
+                    updateData.status = "pending"; // Re-queue for moderation
+                    updateData.moderationNote = `Auto-flagged on update: ${analysis.reasons.join(", ")}`;
+                }
+            }
             // Update review
             const updatedReview = await Review_1.Review.findByIdAndUpdate(reviewId, updateData, {
                 new: true,
@@ -190,15 +208,24 @@ class ReviewService {
         }
     }
     /**
-     * Mark review as helpful/not helpful
+     * Mark review as helpful/not helpful (limited to 1 vote per IP per 24h)
      */
-    static async markReviewHelpful(reviewId, isHelpful) {
+    static async markReviewHelpful(reviewId, isHelpful, voterIp) {
         try {
+            // Simple abuse prevention using Redis
+            const ip = voterIp || "anonymous";
+            const voteKey = `review_vote:${reviewId}:${ip}:${isHelpful ? "helpful" : "not"}`;
+            const alreadyVoted = await redis_1.redisCache.exists(voteKey);
+            if (alreadyVoted) {
+                throw new AppError_1.AppError("You have already voted recently", 429);
+            }
             const updateField = isHelpful ? "helpfulCount" : "notHelpfulCount";
             const review = await Review_1.Review.findByIdAndUpdate(reviewId, { $inc: { [updateField]: 1 } }, { new: true }).populate(["user", "product"]);
             if (!review) {
                 throw new AppError_1.AppError("Review not found", 404);
             }
+            // Set vote key with 24h TTL
+            await redis_1.redisCache.set(voteKey, true, { ttl: 24 * 60 * 60 });
             return review;
         }
         catch (error) {
@@ -267,6 +294,63 @@ class ReviewService {
             logger_1.logger.error("Get product review stats error:", error);
             throw error;
         }
+    }
+    /**
+     * Review analytics & reporting
+     */
+    static async getReviewAnalytics(params) {
+        const match = {};
+        if (params.startDate || params.endDate) {
+            match.createdAt = {};
+            if (params.startDate)
+                match.createdAt.$gte = new Date(params.startDate);
+            if (params.endDate)
+                match.createdAt.$lte = new Date(params.endDate);
+        }
+        const pipeline = [
+            { $match: match },
+            {
+                $facet: {
+                    byStatus: [
+                        { $group: { _id: "$status", count: { $sum: 1 } } },
+                        { $project: { _id: 0, status: "$_id", count: 1 } }
+                    ],
+                    dailyCounts: [
+                        {
+                            $group: {
+                                _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                                count: { $sum: 1 }
+                            }
+                        },
+                        { $sort: { _id: 1 } }
+                    ],
+                    topProductsByRating: [
+                        { $match: { status: "approved" } },
+                        {
+                            $group: {
+                                _id: "$product",
+                                averageRating: { $avg: "$rating" },
+                                totalReviews: { $sum: 1 }
+                            }
+                        },
+                        { $match: { totalReviews: { $gte: 5 } } },
+                        { $sort: { averageRating: -1, totalReviews: -1 } },
+                        { $limit: 10 }
+                    ],
+                    overview: [
+                        {
+                            $group: {
+                                _id: null,
+                                averageRating: { $avg: "$rating" },
+                                totalReviews: { $sum: 1 }
+                            }
+                        }
+                    ]
+                }
+            }
+        ];
+        const [result] = await Review_1.Review.aggregate(pipeline);
+        return result;
     }
     /**
      * Update product rating statistics

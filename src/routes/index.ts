@@ -11,6 +11,9 @@ import adminRoutes from "./admin";
 import performanceRoutes from "./performance";
 import translationRoutes from "./translations";
 import analyticsRoutes from "./analytics";
+import inventoryRoutes from "./inventory";
+import importExportRoutes from "./importExport";
+import notificationRoutes from "./notifications";
 import path from "path";
 import fs from "fs";
 
@@ -81,5 +84,8 @@ router.use("/admin", adminRoutes);
 router.use("/performance", performanceRoutes);
 router.use("/translations", translationRoutes);
 router.use("/analytics", analyticsRoutes);
+router.use("/inventory", inventoryRoutes);
+router.use("/import-export", importExportRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

@@ -438,3 +438,28 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
 
     ResponseHandler.success(res, order, "Order status updated successfully");
 });
+
+// @desc    Get recent orders
+// @route   GET /api/v1/orders/recent
+// @access  Private
+export const getRecentOrders = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { limit = 10 } = req.query;
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+
+    const limitNum = Math.min(parseInt(limit as string) || 10, 50); // Max 50 orders
+
+    // Build filter - users can only see their own orders, admins can see all
+    const filter: any = {};
+    if (userRole !== "admin") {
+        filter.user = userId;
+    }
+
+    const orders = await Order.find(filter)
+        .populate("user", "firstName lastName email phone")
+        .populate("items.product", "name slug sku images")
+        .sort({ createdAt: -1 })
+        .limit(limitNum);
+
+    ResponseHandler.success(res, orders, "Recent orders retrieved successfully");
+});

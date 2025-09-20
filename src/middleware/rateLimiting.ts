@@ -175,7 +175,7 @@ export const authRateLimit = createRateLimiter({
     keyGenerator: (req: Request) => {
         // Rate limit by IP + email combination for more precise limiting
         const email = req.body?.email || "unknown";
-        return `${ipKeyGenerator(req)}:${email}`;
+        return `${ipKeyGenerator(req as any)}:${email}`;
     }
 });
 
@@ -187,7 +187,7 @@ export const failedLoginRateLimit = createRateLimiter({
     skipSuccessfulRequests: true,
     keyGenerator: (req: Request) => {
         const email = req.body?.email || "unknown";
-        return `failed:${ipKeyGenerator(req)}:${email}`;
+        return `failed:${ipKeyGenerator(req as any)}:${email}`;
     }
 });
 

@@ -38,45 +38,47 @@ const mongoose_1 = __importStar(require("mongoose"));
 const ReviewSchema = new mongoose_1.Schema({
     product: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: [true, 'Product is required']
+        ref: "Product",
+        required: [true, "Product is required"]
     },
     user: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'User',
-        required: [true, 'User is required']
+        ref: "User",
+        required: [true, "User is required"]
     },
     rating: {
         type: Number,
-        required: [true, 'Rating is required'],
-        min: [1, 'Rating must be at least 1'],
-        max: [5, 'Rating cannot exceed 5']
+        required: [true, "Rating is required"],
+        min: [1, "Rating must be at least 1"],
+        max: [5, "Rating cannot exceed 5"]
     },
     title: {
         type: String,
         trim: true,
-        maxlength: [200, 'Review title cannot exceed 200 characters']
+        maxlength: [200, "Review title cannot exceed 200 characters"]
     },
     comment: {
         type: String,
         trim: true,
-        maxlength: [2000, 'Review comment cannot exceed 2000 characters']
+        maxlength: [2000, "Review comment cannot exceed 2000 characters"]
     },
-    images: [{
+    images: [
+        {
             type: String
-        }],
+        }
+    ],
     isVerifiedPurchase: {
         type: Boolean,
         default: false
     },
     status: {
         type: String,
-        enum: ['pending', 'approved', 'rejected'],
-        default: 'pending'
+        enum: ["pending", "approved", "rejected"],
+        default: "pending"
     },
     moderatedBy: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: "User"
     },
     moderatedAt: Date,
     moderationNote: String,
@@ -102,8 +104,8 @@ ReviewSchema.index({ user: 1 });
 ReviewSchema.index({ rating: 1 });
 ReviewSchema.index({ createdAt: -1 });
 // Virtual for helpfulness ratio
-ReviewSchema.virtual('helpfulnessRatio').get(function () {
+ReviewSchema.virtual("helpfulnessRatio").get(function () {
     const total = this.helpfulCount + this.notHelpfulCount;
     return total > 0 ? this.helpfulCount / total : 0;
 });
-exports.Review = mongoose_1.default.model('Review', ReviewSchema);
+exports.Review = mongoose_1.default.model("Review", ReviewSchema);

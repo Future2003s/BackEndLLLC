@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateOrderStatus = exports.getAllOrders = exports.getOrderTracking = exports.cancelOrder = exports.getOrder = exports.getUserOrders = exports.createOrder = void 0;
+exports.getRecentOrders = exports.updateOrderStatus = exports.getAllOrders = exports.getOrderTracking = exports.cancelOrder = exports.getOrder = exports.getUserOrders = exports.createOrder = void 0;
 const asyncHandler_1 = require("../utils/asyncHandler");
 const response_1 = require("../utils/response");
 const Order_1 = require("../models/Order");
@@ -363,4 +363,24 @@ exports.updateOrderStatus = (0, asyncHandler_1.asyncHandler)(async (req, res, ne
         }
     });
     response_1.ResponseHandler.success(res, order, "Order status updated successfully");
+});
+// @desc    Get recent orders
+// @route   GET /api/v1/orders/recent
+// @access  Private
+exports.getRecentOrders = (0, asyncHandler_1.asyncHandler)(async (req, res, next) => {
+    const { limit = 10 } = req.query;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const limitNum = Math.min(parseInt(limit) || 10, 50); // Max 50 orders
+    // Build filter - users can only see their own orders, admins can see all
+    const filter = {};
+    if (userRole !== "admin") {
+        filter.user = userId;
+    }
+    const orders = await Order_1.Order.find(filter)
+        .populate("user", "firstName lastName email phone")
+        .populate("items.product", "name slug sku images")
+        .sort({ createdAt: -1 })
+        .limit(limitNum);
+    response_1.ResponseHandler.success(res, orders, "Recent orders retrieved successfully");
 });

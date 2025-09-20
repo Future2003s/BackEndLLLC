@@ -11,6 +11,8 @@ import { logger } from "./utils/logger";
 import { cacheService } from "./services/cacheService";
 import { performanceMonitor } from "./utils/performance";
 import { apiI18nMiddleware } from "./middleware/i18n";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger";
 
 class OptimizedApp {
     public app: express.Application;
@@ -59,6 +61,10 @@ class OptimizedApp {
                 uptime: process.uptime()
             });
         });
+
+        // OpenAPI/Swagger docs
+        this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+        this.app.get("/openapi.json", (req, res) => res.json(swaggerSpec));
 
         // API routes
         this.app.use("/api/v1", routes);
