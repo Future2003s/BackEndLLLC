@@ -25,10 +25,24 @@ interface LoginData {
     password: string;
 }
 
+interface LoginWithSessionData {
+    email: string;
+    password: string;
+    userAgent: string;
+    ipAddress: string;
+    rememberMe?: boolean;
+    deviceInfo?: any;
+}
+
 interface AuthResponse {
     user: Partial<IUser>;
     token: string;
     refreshToken: string;
+}
+
+interface SessionAuthResponse extends AuthResponse {
+    sessionId: string;
+    expiresAt: Date;
 }
 
 export class AuthService {
@@ -160,6 +174,82 @@ export class AuthService {
                 logger.error("Login error:", error);
                 performanceMonitor.recordCacheMiss();
                 throw error;
+            }
+        });
+    }
+
+    /**
+     * Login user with session management
+     */
+    static async loginWithSession(loginData: LoginWithSessionData): Promise<SessionAuthResponse> {
+        return QueryAnalyzer.analyzeQuery("AuthService.loginWithSession", async () => {
+            try {
+                const { email, password, userAgent, ipAddress, rememberMe = false } = loginData;
+
+                // Check rate limiting for failed login attempts
+                const rateLimitKey = `login_attempts:${email}`;
+                const attempts = Number((await rateLimitCache.get(rateLimitKey)) || 0);
+
+                if (attempts >= 5) {
+                    throw new AppError("Too many login attempts. Please try again later.", 429);
+                }
+
+                // Find user with password field for authentication
+                const user = await (User as any).findByEmailForAuth(email);
+
+                if (!user || !(await user.matchPassword(password))) {
+                    // Increment failed login attempts
+                    await rateLimitCache.set(rateLimitKey, attempts + 1, 900); // 15 minutes
+                    throw new AppError("Invalid credentials", 401);
+                }
+
+                // Clear failed login attempts on successful login
+                await rateLimitCache.del(rateLimitKey);
+
+                // Check if user is active
+                if (!user.isActive) {
+                    throw new AppError("Account is deactivated", 401);
+                }
+
+                // Create session using SessionService
+                const { SessionService } = await import("./sessionService");
+                const sessionResult = await SessionService.createSession({
+                    userId: user._id.toString(),
+                    userAgent,
+                    ipAddress,
+                    rememberMe,
+                    loginMethod: "password"
+                });
+
+                // Update last login asynchronously
+                setImmediate(async () => {
+                    try {
+                        await User.findByIdAndUpdate(
+                            user._id,
+                            { lastLogin: new Date() },
+                            { validateBeforeSave: false }
+                        );
+                    } catch (error) {
+                        logger.error("Error updating last login:", error);
+                    }
+                });
+
+                // Remove password from response
+                const userResponse = user.toObject();
+                const { password: _, ...userWithoutPassword } = userResponse;
+
+                logger.info(`User ${user.email} logged in successfully with session: ${sessionResult.sessionId}`);
+
+                return {
+                    user: userWithoutPassword,
+                    token: sessionResult.accessToken,
+                    refreshToken: sessionResult.refreshToken,
+                    sessionId: sessionResult.sessionId,
+                    expiresAt: sessionResult.expiresAt
+                };
+            } catch (error) {
+                logger.error("Login with session error:", error);
+                throw error instanceof AppError ? error : new AppError("Login failed", 500);
             }
         });
     }

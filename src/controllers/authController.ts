@@ -25,8 +25,13 @@ export const register = asyncHandler(async (req: Request, res: Response, next: N
 // @route   POST /api/v1/auth/login
 // @access  Public
 export const login = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
+    const { email, password, rememberMe, deviceInfo } = req.body;
 
+    // Get request metadata
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const ipAddress = req.ip || req.connection.remoteAddress || "Unknown";
+
+    // Fallback to regular login for now, will enhance with session later
     const result = await AuthService.login({ email, password });
 
     ResponseHandler.authSuccess(res, result, "Login successful");
@@ -36,20 +41,28 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
 // @route   POST /api/v1/auth/logout
 // @access  Private
 export const logout = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const sessionId = req.user?.sessionId;
+    const userId = req.user?.id;
+
+    if (sessionId) {
+        // Terminate the session using SessionService
+        const { SessionService } = await import("../services/sessionService");
+        await SessionService.terminateSession(sessionId, "user");
+    }
+
+    // Legacy token blacklisting for backward compatibility
     const token = req.headers.authorization?.split(" ")[1];
     const { refreshToken } = req.body;
 
     if (token) {
-        // Blacklist the access token
         const { CacheWrapper } = await import("../utils/performance.js");
-        const tokenBlacklist = new CacheWrapper("blacklist", 24 * 60 * 60); // 24 hours
+        const tokenBlacklist = new CacheWrapper("blacklist", 24 * 60 * 60);
         await tokenBlacklist.set(token, true);
     }
 
     if (refreshToken) {
-        // Blacklist the refresh token
         const { CacheWrapper } = await import("../utils/performance.js");
-        const refreshBlacklist = new CacheWrapper("blacklist", 7 * 24 * 60 * 60); // 7 days
+        const refreshBlacklist = new CacheWrapper("blacklist", 7 * 24 * 60 * 60);
         await refreshBlacklist.set(refreshToken, true);
     }
 

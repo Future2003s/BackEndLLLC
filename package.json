@@ -77,8 +77,10 @@
     },
     "dependencies": {
         "@fastify/under-pressure": "^9.0.3",
+        "@types/geoip-lite": "^1.4.4",
         "@types/ioredis": "^4.28.10",
         "@types/socket.io": "^3.0.1",
+        "@types/ua-parser-js": "^0.7.39",
         "autocannon": "^8.0.0",
         "axios": "^1.11.0",
         "bcryptjs": "^3.0.2",
@@ -93,6 +95,7 @@
         "express-validator": "^7.2.1",
         "fast-json-stringify": "^6.0.1",
         "flatted": "^3.3.3",
+        "geoip-lite": "^1.4.10",
         "helmet": "^8.1.0",
         "ioredis": "^5.7.0",
         "jsonwebtoken": "^9.0.2",
@@ -112,6 +115,7 @@
         "sonic-boom": "^4.2.0",
         "swagger-jsdoc": "^6.2.8",
         "swagger-ui-express": "^5.0.1",
+        "ua-parser-js": "^2.0.5",
         "winston": "^3.17.0"
     }
 }

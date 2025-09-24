@@ -34,4 +34,8 @@ router.put("/reset-password/:token", authRateLimit, noValidation, resetPassword)
 router.get("/me", protect, getMe);
 router.put("/change-password", protect, authRateLimit, noValidation, changePassword);
 
+// Session management routes
+import sessionsRouter from "./sessions";
+router.use("/sessions", sessionsRouter);
+
 export default router;
