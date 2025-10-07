@@ -14,6 +14,7 @@ import analyticsRoutes from "./analytics";
 import inventoryRoutes from "./inventory";
 import importExportRoutes from "./importExport";
 import notificationRoutes from "./notifications";
+import employeeRoutes from "./employees";
 import path from "path";
 import fs from "fs";
 
@@ -87,5 +88,6 @@ router.use("/analytics", analyticsRoutes);
 router.use("/inventory", inventoryRoutes);
 router.use("/import-export", importExportRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/employees", employeeRoutes);
 
 export default router;
